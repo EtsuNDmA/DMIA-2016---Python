@@ -47,7 +47,7 @@ class LogisticRegression:
             # replacement is faster than sampling without replacement.              #
             #########################################################################
             batch_indxes = np.random.choice(num_train, batch_size, replace=True)
-            X_batch, y_batch = X[batch_indxes], y[batch_indxes]
+            X_batch, y_batch = X[batch_indxes], 2*y[batch_indxes]-1
             
             #########################################################################
             #                       END OF YOUR CODE                                #
@@ -61,7 +61,7 @@ class LogisticRegression:
             # TODO:                                                                 #
             # Update the weights using the gradient and the learning rate.          #
             #########################################################################     
-            self.w += learning_rate*gradW
+            self.w -= learning_rate*gradW
             #########################################################################
             #                       END OF YOUR CODE                                #
             #########################################################################
@@ -135,6 +135,7 @@ class LogisticRegression:
         - loss as single float
         - gradient with respect to weights w; an array of same shape as w
         """
+        N = float(X_batch.shape[0])
         dw = np.zeros_like(self.w)  # initialize the gradient as zero
         loss = 0
         # Compute loss and gradient. Your code should not contain python loops.
@@ -142,17 +143,16 @@ class LogisticRegression:
         M = y_batch*X_batch.dot(self.w)
         loss = np.sum(np.log(1+np.exp(-M)))
         X = X_batch.tocsc()
-        X.data *= (-sigma(-M)*y_batch)[X.indices]
+        X.data *= (sigma(-M)*y_batch)[X.indices]
         dw = X.sum(axis=0).getA1()
         # Right now the loss is a sum over all training examples, but we want it
         # to be an average instead so we divide by num_train.
         # Note that the same thing must be done with gradient.
-        loss /= float(X_batch.shape[0])
-        dw /= float(X_batch.shape[0])
+
         # Add regularization to the loss and gradient.
         # Note that you have to exclude bias term in regularization.
-        loss += np.sum(reg*self.w[:-1]**2)
-        dw += 2*reg*np.hstack((self.w[:-1], 0))
+        loss = loss/N+np.sum(reg*self.w[:-1]**2)
+        dw = -dw/N-2*reg*np.hstack((self.w[:-1], 0))
         return loss, dw
 
     @staticmethod
